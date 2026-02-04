@@ -33,7 +33,6 @@ if run_scan:
     if not username:
         st.warning("Please enter a username.")
     else:
-        # Accessing secrets
         try:
             token = st.secrets["BEARER_TOKEN"]
         except KeyError:
@@ -56,43 +55,47 @@ if run_scan:
                 if response.status_code == 200:
                     data = response.json()
                     
-                    # --- NEW USER FRIENDLY VIEW ---
+                    # Extraction
+                    profile = data.get("profile_info", {})
+                    visual = data.get("visual_analysis", {})
+                    risk_level = visual.get("final_risk_level", "Low").capitalize()
+                    
                     st.markdown("---")
                     st.subheader("È questa la zinnona che volevi bloccare?")
                     
                     col1, col2 = st.columns([1, 2])
                     
-                    # Profile Info from JSON
-                    profile = data.get("profile_info", {})
-                    visual = data.get("visual_analysis", {})
-                    
                     with col1:
-                        # Show profile pic
                         pic_url = profile.get("profile_pic_url")
                         if pic_url:
-                            st.image(pic_url, use_container_width=True, caption=f"@{profile.get('username')}")
-                        else:
-                            st.info("No profile picture available")
+                            st.image(pic_url, use_container_width=True)
+                        st.markdown(f"**Username:** `@{profile.get('username')}`")
 
                     with col2:
-                        st.markdown(f"**Username:** `{profile.get('username')}`")
+                        # Dynamic Risk Content
+                        if risk_level == "High":
+                            st.error(f"**Risk Level: {risk_level}**")
+                            st.write("### Hai beccato na zinnona molestatrice di social")
+                            st.image("https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTNmcDBhY3pieGI5bjVmcHE1NnlzYWo3ejllbWdndWp4dHZ2MGpoZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/PfFbqwqk99lic5FQZT/giphy.gif", width=250)
                         
-                        # Risk Level Color Coding
-                        risk_level = visual.get("final_risk_level", "Unknown")
-                        risk_color = "red" if risk_level.lower() == "high" else "orange" if risk_level.lower() == "medium" else "green"
-                        st.markdown(f"**Final Risk Level:** :{risk_color}[{risk_level}]")
+                        elif risk_level == "Medium":
+                            st.warning(f"**Risk Level: {risk_level}**")
+                            st.write("### Mmmmm verifica il profilo su instagram, questa me puzza ma non sono sicuro")
+                            st.image("https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeDFoODB4c251Ymw2ZTQ2cWRnazlvbGxsMGxjMWQ1bmU3eHA2ZDM2dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZX3iRfERJYfOVKEzTb/giphy.gif", width=250)
                         
-                        # Key Red Flags
+                        else: # Low Risk
+                            st.success(f"**Risk Level: {risk_level}**")
+                            st.write("### Hai mandato una persona potenzialmente innocente al patibolo, fatti un esame di coscienza")
+                            st.image("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExODk3ajJ1eXYwcWtodHozcmI4amlwYnR6MHRndWttd2hzcDk2cDU2ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QDjeYvnJb1IXyy2xSn/giphy.gif", width=250)
+
+                        # Red Flags Section
+                        st.markdown("---")
                         st.markdown("**Key Red Flags:**")
                         flags = visual.get("key_red_flags", [])
-                        if flags:
-                            for flag in flags:
-                                st.markdown(f"- {flag}")
-                        else:
-                            st.write("No specific red flags identified.")
+                        for flag in flags:
+                            st.markdown(f"🚩 {flag}")
 
-                    # Optional: Expandable raw response for debugging
-                    with st.expander("View Raw API Response"):
+                    with st.expander("View Full Report Details"):
                         st.json(data)
                         
                 else:
@@ -101,5 +104,3 @@ if run_scan:
             
             except Exception as e:
                 st.error(f"An error occurred: {e}")
-else:
-    st.info("Fill in the handle on the left and click 'Run Scan' to begin.")
