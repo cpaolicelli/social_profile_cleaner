@@ -19,6 +19,22 @@ WAITING_GIFS = [
     "https://media.tenor.com/bBKvM1p1_o8AAAAC/loading.gif"
 ]
 
+def get_remote_image(url):
+    """
+    Fetches image bytes from a URL with a User-Agent header 
+    to bypass simple CDN hotlinking protections.
+    """
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        response = requests.get(url, headers=headers, stream=True, timeout=5)
+        if response.status_code == 200:
+            return response.content
+    except Exception as e:
+        print(f"Error fetching image: {e}")
+    return url  # Fallback to URL if fetch fails
+
 st.set_page_config(page_title="Social Profile Scanner", page_icon="🔍", layout="centered")
 
 st.title("🔍 Social Profile Scanner")
@@ -149,7 +165,9 @@ if run_scan:
                     with col1:
                         pic_url = profile.get("profile_pic_url")
                         if pic_url:
-                            st.image(pic_url, use_container_width=True)
+                            # Use helper to fetch image bytes
+                            img_data = get_remote_image(pic_url)
+                            st.image(img_data, use_column_width=True)
                         st.markdown(f"**Username:** `@{profile.get('username')}`")
 
                     with col2:
