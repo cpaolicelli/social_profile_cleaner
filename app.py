@@ -25,10 +25,10 @@ st.title("🔍 Social Profile Scanner")
 
 # --- UI Layout ---
 with st.sidebar:
-    st.header("Configuration")
+    st.header("Scan Profile")
     username = st.text_input("Social Handle", placeholder="e.g. janesmith123")
     
-    platforms = ["instagram", "twitter", "facebook", "tiktok"]
+    platforms = ["instagram", "twitter", "tiktok"]
     platform = st.selectbox("Select Platform", options=platforms, index=0)
 
     customers = list(CLIENT_MAPPING.keys())
@@ -39,6 +39,67 @@ with st.sidebar:
     )
     
     run_scan = st.button("Run Scan", type="primary", use_container_width=True)
+
+    st.markdown("---")
+    st.header("Remoderation")
+    st.subheader("Usa questa funzione solo per rimoderare i messaggi")
+    remod_username = st.text_input("User to Remoderate", placeholder="e.g. offensive_user")
+    if st.button("Moderate", type="primary", use_container_width=True):
+        if not remod_username:
+            st.warning("Please enter a username to moderate.")
+        else:
+            try:
+                # Ensure token is available (it's checked later for scan, but needed here too)
+                token = st.secrets["BEARER_TOKEN"]
+                # Change to GET call with path parameters
+                remod_url = f"https://social-profile-scanner-prod.gobubble.cc/moderate/{platform}/{remod_username}"
+                remod_headers = {"Authorization": f"Bearer {token}"}
+                
+                with st.spinner("Moderating..."):
+                    remod_response = requests.get(remod_url, headers=remod_headers)
+                
+                if remod_response.status_code == 200:
+                    st.success(f"Moderation triggered for {remod_username}")
+                else:
+                    st.error(f"Failed: {remod_response.status_code} - {remod_response.text}")
+            except KeyError:
+                st.error("Missing 'BEARER_TOKEN' in Streamlit secrets.")
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+    st.markdown("---")
+    st.header("Hard Block")
+    st.subheader("Blocca manualmente un utente")
+    block_username = st.text_input("User to Block", placeholder="e.g. bad_user")
+    
+    # Use a different variable name and label/key to avoid conflict with the top selector
+    block_platform = st.selectbox("Select Platform", options=platforms, key="block_platform_selector")
+    
+    if st.button("Hard Block", type="primary", use_container_width=True):
+        if not block_username:
+            st.warning("Please enter a username to block.")
+        else:
+            try:
+                token = st.secrets["BEARER_TOKEN"]
+                block_url = "https://social-profile-scanner-prod.gobubble.cc/block"
+                block_headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+                block_payload = {
+                     "username": block_username,
+                     "platform": block_platform
+                }
+                
+                with st.spinner("Blocking user..."):
+                     block_response = requests.post(block_url, json=block_payload, headers=block_headers)
+                
+                if block_response.status_code == 200:
+                     st.success(f"User {block_username} blocked successfully!")
+                else:
+                     st.error(f"Block failed: {block_response.status_code} - {block_response.text}")
+
+            except KeyError:
+                st.error("Missing 'BEARER_TOKEN' in Streamlit secrets.")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
 # Placeholder for results or loading state
 main_container = st.empty()
@@ -108,10 +169,29 @@ if run_scan:
                             st.warning(f"**Risk Level: {risk_level}**")
                             st.write("### Hai mandato una persona potenzialmente innocente al patibolo, fatti un esame di coscienza")
                             st.image("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExODk3ajJ1eXYwcWtodHozcmI4amlwYnR6MHRndWttd2hzcDk2cDU2ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QDjeYvnJb1IXyy2xSn/giphy.gif", width=250)
+                            
+                            st.markdown("### Decision Override")
+                            if st.button("Force User Block", type="primary"):
+                                try:
+                                    block_url = "https://social-profile-scanner-prod.gobubble.cc/block"
+                                    # Reuse headers with token from earlier
+                                    block_payload = {
+                                        "username": username,
+                                        "platform": platform
+                                    }
+                                    with st.spinner("Blocking user..."):
+                                        block_response = requests.post(block_url, json=block_payload, headers=headers)
+                                    
+                                    if block_response.status_code == 200:
+                                        st.success(f"User {username} blocked successfully!")
+                                    else:
+                                        st.error(f"Block failed: {block_response.status_code} - {block_response.text}")
+                                except Exception as e:
+                                    st.error(f"Error blocking user: {e}")
 
                         st.markdown("---")
                         st.markdown("**Key Red Flags:**")
-                        flags = visual.get("key_red_flags", [])
+                        flags = visual.get("key_red_flags", []) 
                         for flag in flags:
                             st.markdown(f"🚩 {flag}")
 
