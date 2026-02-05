@@ -74,10 +74,11 @@ if run_scan:
             # 2. Replace loading GIF with actual results
             if response.status_code == 200:
                 data = response.json()
-                profile = data.get("profile_info", {})
-                visual = data.get("visual_analysis", {})
+                profile = data.get("profile_info") or {}
+                visual = data.get("visual_analysis") or {}
                 risk_level = visual.get("final_risk_level", "Low").capitalize()
-                
+                full_name = profile.get("full_name")
+
                 with main_container.container():
                     st.markdown("---")
                     st.subheader("È questa la zinnona che volevi bloccare?")
@@ -95,14 +96,16 @@ if run_scan:
                             st.error(f"**Risk Level: {risk_level}**")
                             st.write("### Hai beccato na zinnona molestatrice di social")
                             st.image("https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTNmcDBhY3pieGI5bjVmcHE1NnlzYWo3ejllbWdndWp4dHZ2MGpoZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/PfFbqwqk99lic5FQZT/giphy.gif", width=250)
-                        
                         elif risk_level == "Medium":
                             st.warning(f"**Risk Level: {risk_level}**")
                             st.write("### Mmmmm verifica il profilo su instagram, questa me puzza ma non sono sicuro")
                             st.image("https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeDFoODB4c251Ymw2ZTQ2cWRnazlvbGxsMGxjMWQ1bmU3eHA2ZDM2dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZX3iRfERJYfOVKEzTb/giphy.gif", width=250)
-                        
+                        elif risk_level == "Low" and full_name == "Blacklisted User":
+                            st.success(f"**Zinnona già bloccata**")
+                            st.write("### Manco Stanis lavora così, questa l'avete già bloccata, passa avanti")
+                            st.image("https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2l5dWk5YmV1d2V2eW1hY3lobTY3NGVmdGFhaTN0enp4dDNrbG42YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Rh6aICkkBFhZ06seXL/giphy.gif", width=250)
                         else:
-                            st.success(f"**Risk Level: {risk_level}**")
+                            st.warning(f"**Risk Level: {risk_level}**")
                             st.write("### Hai mandato una persona potenzialmente innocente al patibolo, fatti un esame di coscienza")
                             st.image("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExODk3ajJ1eXYwcWtodHozcmI4amlwYnR6MHRndWttd2hzcDk2cDU2ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QDjeYvnJb1IXyy2xSn/giphy.gif", width=250)
 
